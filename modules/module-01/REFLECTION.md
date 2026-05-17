@@ -4,8 +4,8 @@
 
 # Module 1 — Reflection
 
-**Team name**: **\*\***\_\_\_**\*\***
-**Branch**: `module-01/<team-name>`
+**Team name**: Makky Makky
+**Branch**: `module-01
 **Submitted**: before Module 2 lesson
 
 ---
@@ -22,7 +22,7 @@ You started from a painful monolith. Now you're splitting it into separate servi
 
 Think about it from three angles: the developer who has to change code, the team that has to deploy it, and the user who has to live with its failures. You don't need to cover all three, pick the one that felt most real to you today.
 
-> _Your answer:_
+> _Your answer:_ for instance before a notification bug used to risk taking down the whole platform; now it can only break notifications.
 
 ---
 
@@ -34,7 +34,9 @@ Look at your service map. Every arrow between two services is a decision someone
 
 What would break, slow down, or become harder to manage if you merged those two services back together?
 
-> _Your answer:_
+> _Your answer:_  I kept the login part (auth-service) separate from the profile part (user-service).
+>
+> I split them because the login part is sensitive and gets changed a lot. If they were one thing, every time I touched login I could accidentally break profiles. 
 
 ---
 
@@ -46,7 +48,8 @@ Microservices solve the monolith's problems. But they create new ones.
 
 No need to solve it: just name it honestly. This is exactly the tension the rest of the course is about.
 
-> _Your answer:_
+> _Your answer:_ Back when it was all one app, showing someone's activity with the game they played was easy, because all the info sat in the same place
+> but now they are separate,, so the activity part has to go ask the game part for the title and picture.  which can be slow or fail
 
 ---
 
