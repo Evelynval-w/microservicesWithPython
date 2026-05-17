@@ -50,11 +50,34 @@ For each pair of services that need to communicate, define:
 Example:
 
 ```
-activity-service → logging-service
+activity-service → logging-service [event registration]
 Trigger: an activity is logged
 Protocol: RabbitMQ message (async — why not REST here?)
 Payload: { activity_id, user_id, action, game_id, timestamp }
 ```
+
+```
+activity-service -> game-service
+trigger: a new activity is posted it must have the game title
+protocol : Rest(sync) because the caller needs the response in same request.. meaning a low down in one will affect the other (that was why it was added : if game-service is unreachable, activity-service returns "game": null instead of failing)
+payload: { game_id, title, genre, platform, cover_url }
+ ```
+
+```
+activity-service → notification-service
+Trigger: an activity happened; friends should be notified
+Protocol: RabbitMQ message (async) — queue gamehub.notifications
+Payload: { user_id, message }
+```
+
+```
+activity-service → logging-service  [consent check]
+Trigger: before recording an activity
+Protocol: REST (sync)
+Payload: { user_id, granted, updated_at }
+```
+
+
 
 Focus on the flows that feel non-obvious. You do not need to document every possible pair.
 
