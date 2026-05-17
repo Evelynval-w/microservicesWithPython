@@ -94,6 +94,10 @@ Draw the full GameHub service map:
 
 This can be a sketch on paper, a whiteboard photo, or ASCII art committed to your branch.
 
+![service map](comm_trace.webp)
+
+
+
 ---
 
 ## Discussion _(~15 min)_
@@ -102,7 +106,9 @@ Three questions to discuss as a team before you leave:
 
 1. Why does `notification-service` use Node.js instead of Python like the rest? What does that tell you about microservices and technology choices?
 2. What is the risk of `activity-service` calling `logging-service` synchronously — why might you prefer an async event instead?
+---if logging is low or down then it will add latency to the things users are frequenting 
 3. Why does `logging-service` need a GDPR consent check before recording any activity?
+-- because it has to check what they have the right to log
 
 You do not need to write these answers down — they are warm-up for your REFLECTION.md.
 
