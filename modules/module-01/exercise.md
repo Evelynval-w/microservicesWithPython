@@ -34,6 +34,8 @@ For each bounded context you identify, fill in the table:
 
 There is no single correct answer: what matters is that you can justify each row.
 
+![Bounded context](bounded_context.jpg)
+
 ---
 
 ## Task 2 — Define service contracts _(~30 min)_
