@@ -18,7 +18,8 @@ class GameCreate(BaseModel):
     title: str
     genre: str
     platform: str          # plain-text on the way in — hash it in the service layer
-    release_year: int
+    release_year: int | None = None
+    cover_url: str | None = None
 
 
 class GameOut(BaseModel):
@@ -26,9 +27,9 @@ class GameOut(BaseModel):
     title: str
     genre: str
     platform: str
-    release_year: int
+    release_year: int | None
+    cover_url: str | None
     created_at: datetime
-
 
     model_config = {"from_attributes": True}
 

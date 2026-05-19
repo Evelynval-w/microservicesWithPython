@@ -33,7 +33,14 @@ def get_games(db: Session, game_id: str) -> Games | None:
     return db.query(Games).filter(Games.id == game_id).first()
 
 
-def list_games(db: Session, limit: int = 20, offset: int = 0) -> tuple[list[Games], int]:
+def list_games(db: Session, limit: int = 20, offset: int = 0) -> tuple[list[Games, int], int]:
     total = db.query(Games).count()
     games = db.query(Games).offset(offset).limit(limit).all()
+    return games, total
+
+
+def search_games(db: Session, q: str, limit: int = 20, offset: int = 0) -> tuple[list[Games], int]:
+    query = db.query(Games).filter(Games.title.ilike(f"%{q}%"))
+    total = query.count()
+    games = query.offset(offset).limit(limit).all()
     return games, total
