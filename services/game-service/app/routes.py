@@ -24,7 +24,7 @@ def create_game(data: schemas.GameCreate, db: Session = Depends(get_db)):
     return service.add_game(db, data)
 
 
-@router.get("/", response_model=schemas.GamesList)
+@router.get("/", response_model=schemas.GameList)
 def list_games(limit: int = 20, offset: int = 0, db: Session = Depends(get_db)):
     return service.fetch_all_games(db, limit=limit, offset=offset)
 

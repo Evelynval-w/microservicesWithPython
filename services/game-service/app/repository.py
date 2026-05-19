@@ -29,7 +29,7 @@ def create_game(db: Session, data: GameCreate) -> Games:
     return games
 
 
-def get_games(db: Session, game_id: str) -> Games | None:
+def get_game(db: Session, game_id: str) -> Games | None:
     return db.query(Games).filter(Games.id == game_id).first()
 
 

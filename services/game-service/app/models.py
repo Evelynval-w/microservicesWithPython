@@ -13,7 +13,7 @@
 #
 # Import Base from app.database — do not redefine it here.
 
-from sqlalchemy import Column, String, DateTime, integer
+from sqlalchemy import Column, String, DateTime, Integer
 from datetime import datetime, timezone
 import uuid
 from app.database import Base
@@ -27,7 +27,7 @@ class Games(Base):
     title = Column(String, unique=True, nullable=False)
     genre = Column(String, nullable=False)
     platform = Column(String, nullable=False)
-    release_year = Column(integer, nullable=True)
+    release_year = Column(Integer, nullable=True)
     cover_url = Column(String, default=None)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
