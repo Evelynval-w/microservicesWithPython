@@ -12,3 +12,22 @@
 # - created_at   DateTime, defaults to now (UTC)
 #
 # Import Base from app.database — do not redefine it here.
+
+from sqlalchemy import Column, String, DateTime, integer
+from datetime import datetime, timezone
+import uuid
+from app.database import Base
+
+
+class Games(Base):
+    __tablename__ = "games"
+
+
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    title = Column(String, unique=True, nullable=False)
+    genre = Column(String, nullable=False)
+    platform = Column(String, nullable=False)
+    release_year = Column(integer, nullable=True)
+    cover_url = Column(String, default=None)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
