@@ -20,7 +20,9 @@ Think about what happens six months later when someone new joins the team, or wh
 
 > *Your answer:*
 
----
+--- putting everything in opne file is file at first but then it gets messy as time goes on... for instance if a new person joins he has to go through gaint line of  code which can be so daunting
+
+---or if we swap db's then it gets really messy.. having each file with their own function is better.
 
 ## 2. Your choice
 
@@ -32,7 +34,16 @@ Give a concrete scenario, not a general principle.
 
 > *Your answer:*
 
----
+--- if the game-service has access to
+write into the users table directly...
+then things can go wrong fast.
+
+say there's a bug in the game-service
+and it accidentally sets a user's
+is_active to false after a game ends
+
+now that user can't log in anymore
+
 
 ## 3. The tradeoff
 
@@ -44,6 +55,7 @@ And at what point does the complexity start to pay off? Where is the tipping poi
 
 > *Your answer:*
 
----
+--- for me, i beleive that for a small crud service like this one ... these 5 layered structure is an overkill...
+it starts paying off when we have real business rules, when alot of people ar collaborating
 
 *Keep this file. You will refer back to it during the oral presentation.*
