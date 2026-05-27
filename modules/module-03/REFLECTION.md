@@ -1,7 +1,7 @@
 # Module 3 — Reflection
 
-**Team name**: _______________
-**Branch**: `module-03/<team-name>`
+**Team name**: makuo
+**Branch**: `module-03
 **Submitted**: before Module 4 lesson
 
 ---
@@ -18,7 +18,7 @@ All client requests now go through the gateway. No client ever calls a service d
 
 Think about what the client would need to know and manage if it talked to each service on its own port.
 
-> *Your answer:*
+> *Your answer:* the gateway give the client one address to talk to, the whole point is that even if we change port it wont break cos the frontend doesnt talk directly to the backend...but without it the frontend has to remember every port. so yeah the services are in the middle.. they are the ones we can change and move around how ever we want 
 
 ---
 
@@ -30,7 +30,7 @@ The activity-service makes two outbound calls: one to validate the user (with re
 
 What is the consequence for the user in each case if the downstream service is unavailable?
 
-> *Your answer:*
+> *Your answer:* cos one is for validating the user and its very essential so i retry once in case its due to network...whereever for fetching the game from the game service if it fails no issue.
 
 ---
 
@@ -42,7 +42,7 @@ Every time a client creates an activity, three services are involved synchronous
 
 What happens to the user experience if the slowest service in the chain takes 3 seconds to respond?
 
-> *Your answer:*
+> *Your answer:* When you chain three services synchronously, the response is only as fast as the slowest one. If one of them takes 3 seconds to reply, the whole request takes 3 seconds, even if the other two are instant. sync can look simple but they are fragile
 
 ---
 
