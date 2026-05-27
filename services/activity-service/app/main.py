@@ -39,7 +39,34 @@ async def validate_user(user_id: str) -> None:
     Use `async with httpx.AsyncClient(timeout=5.0) as client:` for HTTP calls.
     This call is CRITICAL — the request must not proceed if validation fails.
     """
-    raise NotImplementedError
+    # raise NotImplementedError
+    
+    url = f"{settings.user_service_url}/v1/users/{user_id}"
+
+    for attempt in range(2):  # first try + one retry = 2 attempts max
+        try:
+            async with httpx.AsyncClient(timeout=5.0) as client:
+                response = await client.get(url)
+        except httpx.RequestError:
+            # retry once here
+            if attempt == 1:
+                raise HTTPException(
+                    status_code=503,  # raise error after
+                    detail="user-service unavailable",
+                )
+            continue  # for the retry
+    
+        # but if we have a reponse
+        
+        if response.status_code == 200:
+            return
+        if response.status_code == 404:
+            raise HTTPException(status_code=404, detail="User not found")
+        
+        raise HTTPException(
+            status_code=503,
+            detail="user-service unavailable",
+        )
 
 
 async def fetch_game(game_id: str) -> dict | None:
@@ -56,7 +83,18 @@ async def fetch_game(game_id: str) -> dict | None:
     Graceful degradation is the goal: the response will include "game": null
     when game-service is unreachable.
     """
-    raise NotImplementedError
+    # raise NotImplementedError
+    
+    url = f"{settings.game_service_url}/v1/games/{game_id}"
+    try:
+        async with httpx.AsyncClient(timeout=5.0) as client:
+            response = await client.get(url)
+    except httpx.RequestError:
+        return None
+    
+    if response.status_code == 200:
+        return response.json()
+    return None
 
 
 # ---------------------------------------------------------------------------
