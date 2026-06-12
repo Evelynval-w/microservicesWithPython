@@ -26,6 +26,13 @@ npm-debug.log*
 .DS_Store
 Thumbs.db
 
+# SQLite local dev databases
+*.db
+*.db-journal
+*.sqlite
+*.sqlite3
+
+
 # IDE
 .vscode/
 .idea/
@@ -46,7 +53,7 @@ frontend/*.local
 
 
 
-modules/module-04/*
+
 modules/module-05/*
 modules/module-06/*
 modules/module-07/*
