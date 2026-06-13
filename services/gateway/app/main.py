@@ -10,9 +10,14 @@ ROUTES: dict[str, str] = {
     "games":      settings.game_service_url,
     "activities": settings.activity_service_url,
     # Added in Module 4
-    # "notifications": settings.notification_service_url,
+    "notifications": settings.notification_service_url,
+    "consent":    settings.logging_service_url,
+    "logs":       settings.logging_service_url,
+    # Added in Module 6
+    "auth":       settings.auth_service_url,
 }
 
+PUBLIC_PATHS = {"v1/auth/token"}
 
 @app.get("/health")
 async def health():
@@ -32,6 +37,19 @@ async def proxy(request: Request, path: str):
     target_base = ROUTES.get(resource)
     if target_base is None:
         return Response(status_code=404, content=f"Unknown resource: {resource}")
+    
+    # Step 2.5 — Module 6: require a valid JWT on everything except public paths
+    if path not in PUBLIC_PATHS:
+        auth_header = request.headers.get("authorization", "")
+        if not auth_header.startswith("Bearer "):
+            return Response(status_code=401, content="Missing or malformed token")
+        token = auth_header.split(" ", 1)[1]
+        try:
+            jwt.decode(token, settings.secret_key, algorithms=["HS256"])
+        except JWTError:
+            return Response(status_code=401, content="Invalid or expired token")
+
+    
 
     # Step 3 — forward the request
     target_url = f"{target_base}/{path}"
