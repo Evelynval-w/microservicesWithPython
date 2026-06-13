@@ -44,3 +44,12 @@ def search_games(db: Session, q: str, limit: int = 20, offset: int = 0) -> tuple
     total = query.count()
     games = query.offset(offset).limit(limit).all()
     return games, total
+
+
+def delete_game(db: Session, game_id: str) -> bool:
+    game = db.query(Games).filter(Games.id == game_id).first()
+    if game is None:
+        return False
+    db.delete(game)
+    db.commit()
+    return True
