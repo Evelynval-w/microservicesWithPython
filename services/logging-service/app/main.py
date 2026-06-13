@@ -11,6 +11,7 @@ import threading
 
 from dotenv import load_dotenv
 from flask import Flask, jsonify, request
+from datetime import datetime, timezone
 
 from app.models import ActivityLog, Consent, db
 
@@ -51,7 +52,24 @@ def set_consent(user_id):
     3. Set granted and updated_at, then db.session.commit()
     4. Return 200 with { "user_id", "granted", "updated_at" }
     """
-    raise NotImplementedError
+    # raise NotImplementedError
+    body = request.get_json(silent=True) or {}
+    granted = bool(body.get("granted", False))
+
+    consent = db.session.get(Consent, user_id)
+    if consent is None:
+        consent = Consent(user_id=user_id, granted=granted)
+        db.session.add(consent)
+    else:
+        consent.granted = granted
+    consent.updated_at = datetime.now(timezone.utc)
+    db.session.commit()
+
+    return jsonify({
+        "user_id": consent.user_id,
+        "granted": consent.granted,
+        "updated_at": consent.updated_at.isoformat(),
+    }), 200
 
 
 @app.get("/v1/consent/<user_id>")
@@ -64,7 +82,14 @@ def get_consent(user_id):
     2. If not found → 404 with { "detail": "No consent record found" }
     3. Otherwise → 200 with { "user_id", "granted", "updated_at" }
     """
-    raise NotImplementedError
+    consent = db.session.get(Consent, user_id)
+    if consent is None:
+        return jsonify({"detail": "No consent record found"}), 404
+    return jsonify({
+        "user_id": consent.user_id,
+        "granted": consent.granted,
+        "updated_at": consent.updated_at.isoformat(),
+    }), 200
 
 
 @app.delete("/v1/consent/<user_id>")
@@ -77,7 +102,17 @@ def withdraw_consent(user_id):
     2. Set granted=False, update updated_at, commit
     3. Return 200 with { "user_id", "granted", "updated_at" }
     """
-    raise NotImplementedError
+    consent = db.session.get(Consent, user_id)
+    if consent is None:
+        return jsonify({"detail": "No consent record found"}), 404
+    consent.granted = False
+    consent.updated_at = datetime.now(timezone.utc)
+    db.session.commit()
+    return jsonify({
+        "user_id": consent.user_id,
+        "granted": consent.granted,
+        "updated_at": consent.updated_at.isoformat(),
+    }), 200
 
 
 @app.delete("/v1/logs/<user_id>")
@@ -90,7 +125,13 @@ def delete_logs(user_id):
     2. Commit
     3. Return 200 with { "user_id", "deleted_entries": <count> }
     """
-    raise NotImplementedError
+    # raise NotImplementedError
+    count = db.session.query(ActivityLog).filter(ActivityLog.user_id == user_id).delete()
+    db.session.commit()
+    return jsonify({
+        "user_id": user_id,
+        "deleted_entries": count
+    }), 200
 
 
 @app.get("/v1/logs/<user_id>")
@@ -101,4 +142,19 @@ def get_logs(user_id):
     Returns: { "items": [...], "total": N }
     Each item: { "id", "user_id", "game_id", "action", "message", "created_at" }
     """
-    raise NotImplementedError
+    # raise NotImplementedError
+    logs = db.session.query(ActivityLog).filter(ActivityLog.user_id == user_id).all()
+    return jsonify({
+        "items": [
+            {
+                "id": log.id,
+                "user_id": log.user_id,
+                "game_id": log.game_id,
+                "action": log.action,
+                "message": log.message,
+                "created_at": log.created_at.isoformat(),
+            }
+            for log in logs
+        ],
+        "total": len(logs)
+    }), 200
