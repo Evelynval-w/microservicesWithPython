@@ -1,5 +1,6 @@
 import httpx
 from fastapi import FastAPI, Request, Response
+from jose import jwt, JWTError
 
 from app.config import settings
 
