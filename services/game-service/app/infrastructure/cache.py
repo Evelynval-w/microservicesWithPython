@@ -33,6 +33,7 @@ def _key(game_id: str) -> str:
 # Write side — implemented, call this from service.py after creating a game
 # ---------------------------------------------------------------------------
 
+
 def set_game_summary(game_id: str, data: dict) -> None:
     """
     Store a game summary projection in Redis.
@@ -52,6 +53,7 @@ def set_game_summary(game_id: str, data: dict) -> None:
 # Read side — YOUR TASK
 # ---------------------------------------------------------------------------
 
+
 def get_game_summary(game_id: str) -> dict | None:
     """
     Retrieve a game summary projection from Redis.
@@ -70,4 +72,9 @@ def get_game_summary(game_id: str) -> dict | None:
         → call get_game_summary(game_id)
         → return 200 with the dict, or 404 if None
     """
-    raise NotImplementedError
+    # raise NotImplementedError
+    r = _get_client()
+    raw = r.get(_key(game_id))
+    if raw is None:
+        return None
+    return json.loads(raw)
