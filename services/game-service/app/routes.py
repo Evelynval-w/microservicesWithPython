@@ -10,22 +10,14 @@
 # If /{game_id} comes first, FastAPI will try to match "search" as an ID
 # and return a 422 Unprocessable Entity error.
 
+# Interface layer — HTTP endpoints.
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app import service, schemas
 from app.security import require_admin
-
-
-router = APIRouter(prefix="/v1/games", tags=["games"])
-
-@router.delete("/{game_id}", dependencies=[Depends(require_admin)])
-def delete_game(game_id: str, db: Session = Depends(get_db)):
-    try:
-        service.remove_game(db, game_id)
-        return {"deleted": True, "id": game_id}
-    except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e))
+from app.infrastructure.cache import get_game_summary
 
 
 router = APIRouter(prefix="/v1/games", tags=["games"])
@@ -50,5 +42,22 @@ def search_games(q: str, limit: int = 20, offset: int = 0, db: Session = Depends
 def get_game(game_id: str, db: Session = Depends(get_db)):
     try:
         return service.fetch_game(db, game_id)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+
+@router.get("/{game_id}/summary")
+def game_summary(game_id: str):
+    data = get_game_summary(game_id)
+    if data is None:
+        raise HTTPException(status_code=404, detail="No summary cached")
+    return data
+
+
+@router.delete("/{game_id}", dependencies=[Depends(require_admin)])
+def delete_game(game_id: str, db: Session = Depends(get_db)):
+    try:
+        service.remove_game(db, game_id)
+        return {"deleted": True, "id": game_id}
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))

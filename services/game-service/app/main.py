@@ -10,7 +10,9 @@
 
 from fastapi import FastAPI
 from app.routes import router
-
+from app.database import Base, engine
+from app import models  #   noqa: F401  # Ensure models are imported so that Base.metadata.create_all() works
 
 app = FastAPI(title="game-service")
 app.include_router(router)
+Base.metadata.create_all(bind=engine)

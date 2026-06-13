@@ -1,0 +1,726 @@
+{
+  "info": {
+    "name": "SnapQuest Microservices \u2014 Modules 5 & 6",
+    "description": "Tests the gateway (port 8000): CQRS read model, GDPR consent, JWT auth, and admin role enforcement. Run requests top to bottom \u2014 token capture and game_id flow through automatically.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8000"
+    },
+    {
+      "key": "token",
+      "value": ""
+    },
+    {
+      "key": "admin_token",
+      "value": ""
+    },
+    {
+      "key": "game_id",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Auth",
+      "item": [
+        {
+          "name": "Get gamer token",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/v1/auth/token",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "v1",
+                "auth",
+                "token"
+              ]
+            },
+            "description": "PUBLIC endpoint. Body is form-encoded (x-www-form-urlencoded), NOT JSON. Saves the gamer JWT to {{token}}.",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "username",
+                  "value": "testuser",
+                  "type": "text"
+                },
+                {
+                  "key": "password",
+                  "value": "password",
+                  "type": "text"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "const t = pm.response.json().access_token;",
+                  "pm.collectionVariables.set('token', t);",
+                  "pm.test('got a token', () => pm.expect(t).to.be.a('string').and.not.empty);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get admin token",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/v1/auth/token",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "v1",
+                "auth",
+                "token"
+              ]
+            },
+            "description": "Saves the admin JWT to {{admin_token}} for the role-enforcement tests.",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "username",
+                  "value": "admin",
+                  "type": "text"
+                },
+                {
+                  "key": "password",
+                  "value": "adminpass",
+                  "type": "text"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "pm.collectionVariables.set('admin_token', pm.response.json().access_token);"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "2. Module 5 \u2014 CQRS (game-service)",
+      "item": [
+        {
+          "name": "Create game",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/v1/games/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "v1",
+                "games",
+                ""
+              ]
+            },
+            "description": "Writes to SQLite AND the Redis summary projection. Saves the new id to {{game_id}}.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Hades\",\n  \"genre\": \"Roguelike\",\n  \"platform\": \"PC\",\n  \"release_year\": 2020,\n  \"cover_url\": \"https://example.com/hades.jpg\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('201 Created', () => pm.response.to.have.status(201));",
+                  "const id = pm.response.json().id;",
+                  "pm.collectionVariables.set('game_id', id);",
+                  "pm.test('returned an id', () => pm.expect(id).to.be.a('string').and.not.empty);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get game (SQLite write model)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/v1/games/{{game_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "v1",
+                "games",
+                "{{game_id}}"
+              ]
+            },
+            "description": "Reads the authoritative full record from SQLite.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('full object has created_at', () => pm.expect(pm.response.json()).to.have.property('created_at'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get game SUMMARY (Redis read model)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/v1/games/{{game_id}}/summary",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "v1",
+                "games",
+                "{{game_id}}",
+                "summary"
+              ]
+            },
+            "description": "Reads the fast, denormalised projection from Redis \u2014 only 5 fields, no created_at. That difference IS the CQRS point.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "const b = pm.response.json();",
+                  "pm.test('trimmed 5-field projection', () => { pm.expect(b).to.have.keys(['id','title','genre','platform','cover_url']); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "3. Module 5 \u2014 GDPR Consent (logging-service)",
+      "item": [
+        {
+          "name": "Get consent (before \u2014 404)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/v1/consent/u1",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "v1",
+                "consent",
+                "u1"
+              ]
+            },
+            "description": "No consent stored yet, so 404.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('404 \u2014 no record yet', () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Grant consent",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/v1/consent/u1",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "v1",
+                "consent",
+                "u1"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"granted\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('granted is true', () => pm.expect(pm.response.json().granted).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get consent (after \u2014 200)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/v1/consent/u1",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "v1",
+                "consent",
+                "u1"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get logs for user",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/v1/logs/u1",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "v1",
+                "logs",
+                "u1"
+              ]
+            },
+            "description": "Lists stored activity logs. Populates after the activity consumer runs with consent granted.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('has items + total', () => { const b = pm.response.json(); pm.expect(b).to.have.property('items'); pm.expect(b).to.have.property('total'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Withdraw consent",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/v1/consent/u1",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "v1",
+                "consent",
+                "u1"
+              ]
+            },
+            "description": "Sets granted=False but keeps the record (audit trail).",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('granted now false', () => pm.expect(pm.response.json().granted).to.eql(false));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Erase logs (right to erasure)",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/v1/logs/u1",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "v1",
+                "logs",
+                "u1"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('reports deleted_entries', () => pm.expect(pm.response.json()).to.have.property('deleted_entries'));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "4. Module 6 \u2014 Security enforcement",
+      "item": [
+        {
+          "name": "No token -> 401",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/v1/games/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "v1",
+                "games",
+                ""
+              ]
+            },
+            "description": "Proves the gateway lock works: no Bearer header => rejected at the front door.",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('401 \u2014 gateway blocks unauthenticated', () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Bad token -> 401",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/v1/games/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "v1",
+                "games",
+                ""
+              ]
+            },
+            "description": "Tampered/garbage token fails signature verification => 401.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "not.a.real.token",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('401 \u2014 bad signature rejected', () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Valid gamer token -> 200",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/v1/games/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "v1",
+                "games",
+                ""
+              ]
+            },
+            "description": "Same request, real token, now forwarded.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 \u2014 valid token forwards', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Gamer DELETE -> 403",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/v1/games/{{game_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "v1",
+                "games",
+                "{{game_id}}"
+              ]
+            },
+            "description": "Identity is fine, but role != admin. require_admin returns 403.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('403 \u2014 known user, wrong role', () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Admin DELETE -> 200 or 404",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/v1/games/{{game_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "v1",
+                "games",
+                "{{game_id}}"
+              ]
+            },
+            "description": "Admin role passes require_admin. 200 if the game still exists, 404 if a prior run deleted it.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{admin_token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('admin allowed (200 if exists, 404 if already gone)', () => pm.expect([200,404]).to.include(pm.response.code));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
