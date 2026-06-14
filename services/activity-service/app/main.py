@@ -106,11 +106,11 @@ def health():
 @app.post("/v1/activities", response_model=schemas.ActivityOut, status_code=201)
 async def create_activity(data: schemas.ActivityCreate, db: Session = Depends(get_db)):
     await validate_user(data.user_id)
-    activity = repository.create_activity(db, data)
-    game_data = await fetch_game(activity.game_id)
+    activity = repository.create_activity(db, data) # activity saved
+    game_data = await fetch_game(activity.game_id) # game is fetched
     
     # Module 4: publish an async event for notification-service (and logs)
-    game_title = game_data["title"] if game_data else None
+    game_title = game_data["title"] if game_data else None  # calls this to drop a messag ein the queue
     await publish_activity_event(
         user_id=activity.user_id,
         game_id=activity.game_id,
